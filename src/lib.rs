@@ -87,6 +87,25 @@ impl<T> Matrix<T>{
         result
     }
 
+    /// Произведение Кронекера (тензорное умножение)
+    pub fn kroneker_product(m1: &Matrix<T>, m2: &Matrix<T>) -> Matrix<T>
+    where T: Add<Output=T> + Mul<Output=T> + Default + Copy + Clone{
+        let mut result = Matrix::new(m1.nrow*m2.nrow, m1.ncol*m2.ncol);
+        for i1 in 0..m1.nrow{
+            for j1 in 0..m1.ncol{
+                for i2 in 0..m2.nrow{
+                    for j2 in 0..m2.ncol{
+                        let row = i1 * m2.nrow + i2;
+                        let col = j1 * m2.ncol + j2;
+                        result.set(row, col,
+                            m1.get(i1, j1) * m2.get(i2, j2));
+                    }
+                }
+            }
+        }
+        result
+    }
+
     /// Количество ячеек в матрице
     pub fn count_of_cells(&self) -> usize {
         self.nrow * self.ncol
