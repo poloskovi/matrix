@@ -3,7 +3,7 @@ use std::fmt;
 use std::fmt::Display;
 
 pub struct Matrix<T>{
-    m: Vec<T>,
+    pub m: Vec<T>,
     pub nrow: usize,
     pub ncol: usize,
 }
