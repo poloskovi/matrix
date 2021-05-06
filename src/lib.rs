@@ -122,17 +122,28 @@ impl<T> Matrix<T>{
     }
 
     /// копия матрицы
+//    pub fn copy(&self) -> Matrix<T>
+//    where T: Default + Copy + Clone{
+//        let mut result = Matrix::new(self.nrow, self.ncol);
+//        for row in 0..self.nrow{
+//            for col in 0..self.ncol{
+//                result.set(row, col, self.get(row, col));
+//            }
+//        }
+//        result
+//    }
     pub fn copy(&self) -> Matrix<T>
-    where T: Default + Copy + Clone{
-        let mut result = Matrix::new(self.nrow, self.ncol);
-        for row in 0..self.nrow{
-            for col in 0..self.ncol{
-                result.set(row, col, self.get(row, col));
-            }
+    where T: Copy + Clone{
+        let mut m:Vec::<T> = Vec::with_capacity(self.nrow*self.ncol);
+        for i in 0..self.nrow*self.ncol{
+            m.push(self.m[i]);
         }
-        result
+        Matrix {
+            m: m,
+            nrow: self.nrow,
+            ncol: self.ncol,
+        }
     }
-
 }
 
 impl<T> fmt::Display for Matrix<T>

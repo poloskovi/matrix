@@ -69,3 +69,21 @@ fn matrix_kroneker_product(){
     assert_eq!(m3.get(3,3),28);
 }
 
+#[test]
+fn matrix_copy(){
+
+    let mut m1 = Matrix::new(2,2);
+    m1.set(0,0,1);
+    m1.set(0,1,2);
+    m1.set(1,0,3);
+    m1.set(1,1,4);
+
+    let m2 = m1.copy();
+    assert_eq!(m2.nrow, m1.nrow);
+    assert_eq!(m2.ncol ,m1.ncol);
+    assert_eq!(m2.get(0,0), 1);
+    assert_eq!(m2.get(0,1), 2);
+    assert_eq!(m2.get(1,0), 3);
+    assert_eq!(m2.get(1,1), 4);
+}
+
