@@ -21,7 +21,7 @@ fn test_print() {
 
 fn test_mul() {
 
-    println!("Пример: умножение");
+    println!("Пример: умножение с учетом сомножителя");
     let mut m1 = Matrix::new(2,2);
     m1.const_mult = Some(2);
     m1.set(0,0,1);
