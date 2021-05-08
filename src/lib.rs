@@ -25,19 +25,18 @@ impl<T> Matrix<T>{
 
     /// Возвращает значение в ячейке (row,col)
     pub fn get(&self, row:usize, col:usize) -> T
-    where T: Copy + Mul<Output=T>{
-        let index = row * self.ncol + col;
-        match self.const_mult{
-            None => self.m[index],
-            Some(x) => self.m[index] * x
-        }
-    }
-
-    /// Возвращает значение в ячейке (row,col) без сомножителя
-    pub fn get_wo_mult(&self, row:usize, col:usize) -> T
     where T: Copy{
         let index = row * self.ncol + col;
         self.m[index]
+    }
+
+    /// Возвращает значение в ячейке (row,col) без сомножителя
+    pub fn get_with_mult(&self, row:usize, col:usize) -> T
+    where T: Copy + Mul<Output=T>{
+        match self.const_mult{
+            None => self.get(row, col),
+            Some(x) => self.get(row, col) * x
+        }
     }
 
     /// Устанавливает значение x в ячейку (row,col)
@@ -77,7 +76,7 @@ impl<T> Matrix<T>{
         result.const_mult = self.const_mult;
         for row in 0..self.nrow {
             for col in 0..self.ncol {
-                result.set(col, row, self.get_wo_mult(row,col));
+                result.set(col, row, self.get(row,col));
             }
         }
         result
@@ -86,8 +85,18 @@ impl<T> Matrix<T>{
     /// Умножение
     pub fn mul(m1: &Matrix<T>, m2: &Matrix<T>) -> Matrix<T>
     where T: Add<Output=T> + Mul<Output=T> + Default + Copy + Clone{
+
         assert_eq!(m1.ncol, m2.nrow);
+
         let mut result = Matrix::new(m1.nrow, m2.ncol);
+        result.const_mult =
+            match (m1.const_mult, m2.const_mult) {
+                (None, None) => None,
+                (Some(x), None) => Some(x),
+                (None, Some(y)) => Some(y),
+                (Some(x), Some(y)) => Some(x*y)
+            };
+
         for i in 0..m1.nrow {
             for j in 0..m2.ncol {
                 let mut cij = T::default();
@@ -104,7 +113,16 @@ impl<T> Matrix<T>{
     /// Произведение Кронекера (тензорное умножение)
     pub fn kroneker_product(m1: &Matrix<T>, m2: &Matrix<T>) -> Matrix<T>
     where T: Add<Output=T> + Mul<Output=T> + Default + Copy + Clone{
+
         let mut result = Matrix::new(m1.nrow*m2.nrow, m1.ncol*m2.ncol);
+        result.const_mult =
+            match (m1.const_mult, m2.const_mult) {
+                (None, None) => None,
+                (Some(x), None) => Some(x),
+                (None, Some(y)) => Some(y),
+                (Some(x), Some(y)) => Some(x*y)
+            };
+
         for i1 in 0..m1.nrow{
             for j1 in 0..m1.ncol{
                 for i2 in 0..m2.nrow{
@@ -156,6 +174,15 @@ impl<T> fmt::Display for Matrix<T>
 
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 
+        let pred_str;
+        match self.const_mult{
+            Some(x) => {
+                write!(f, "{:5} * ", x)?;
+                pred_str = "        ".to_string();
+            },
+            _ => pred_str = "".to_string(),
+        }
+
         // для больших матриц вместо части строк и столбцов выводим "..."
         let skip_rows_after: usize = 14;
         let skip_columns_after: usize = 9;
@@ -169,6 +196,9 @@ impl<T> fmt::Display for Matrix<T>
                 if row > skip_rows_after + 1 && row != self.nrow-1 {
                     continue;
                 }
+            }
+            if row>0{
+                write!(f, "{}", pred_str)?;
             }
 
             if self.nrow == 1{
