@@ -6,6 +6,8 @@ pub struct Matrix<T>{
     pub m: Vec<T>,
     pub nrow: usize,
     pub ncol: usize,
+    // сомножитель на каждый из членов матрицы
+    pub const_mult: Option<T>,
 }
 
 impl<T> Matrix<T>{
@@ -17,11 +19,22 @@ impl<T> Matrix<T>{
             m: vec![T::default(); ncol*nrow],
             nrow,
             ncol,
+            const_mult: None,
         }
     }
 
     /// Возвращает значение в ячейке (row,col)
     pub fn get(&self, row:usize, col:usize) -> T
+    where T: Copy + Mul<Output=T>{
+        let index = row * self.ncol + col;
+        match self.const_mult{
+            None => self.m[index],
+            Some(x) => self.m[index] * x
+        }
+    }
+
+    /// Возвращает значение в ячейке (row,col) без сомножителя
+    pub fn get_wo_mult(&self, row:usize, col:usize) -> T
     where T: Copy{
         let index = row * self.ncol + col;
         self.m[index]
@@ -61,9 +74,10 @@ impl<T> Matrix<T>{
     pub fn t(&self) -> Matrix<T>
     where T: Default + Copy + Clone{
         let mut result = Matrix::new(self.ncol, self.nrow);
+        result.const_mult = self.const_mult;
         for row in 0..self.nrow {
             for col in 0..self.ncol {
-                result.set(col, row, self.get(row,col));
+                result.set(col, row, self.get_wo_mult(row,col));
             }
         }
         result
@@ -122,16 +136,6 @@ impl<T> Matrix<T>{
     }
 
     /// копия матрицы
-//    pub fn copy(&self) -> Matrix<T>
-//    where T: Default + Copy + Clone{
-//        let mut result = Matrix::new(self.nrow, self.ncol);
-//        for row in 0..self.nrow{
-//            for col in 0..self.ncol{
-//                result.set(row, col, self.get(row, col));
-//            }
-//        }
-//        result
-//    }
     pub fn copy(&self) -> Matrix<T>
     where T: Copy + Clone{
         let mut m:Vec::<T> = Vec::with_capacity(self.nrow*self.ncol);
@@ -142,6 +146,7 @@ impl<T> Matrix<T>{
             m: m,
             nrow: self.nrow,
             ncol: self.ncol,
+            const_mult: None,
         }
     }
 }
