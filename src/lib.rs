@@ -170,7 +170,7 @@ impl<T> Matrix<T>{
 }
 
 impl<T> fmt::Display for Matrix<T>
-    where T: Display + Add<Output=T> + Sub<Output=T> + Mul<Output=T> + Default + Copy + Clone{
+    where T: Display + Copy{
 
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 
