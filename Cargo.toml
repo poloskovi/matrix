@@ -1,6 +1,6 @@
 [package]
 name = "matrix"
-version = "0.1.5"
+version = "0.1.6"
 authors = ["Igor Poloskov <ipoloskov@mail.ru>"]
 edition = "2018"
 

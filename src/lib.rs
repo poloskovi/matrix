@@ -6,20 +6,17 @@ pub struct Matrix<T>{
     pub m: Vec<T>,
     pub nrow: usize,
     pub ncol: usize,
-    // сомножитель на каждый из членов матрицы
-    pub const_mult: Option<T>,
 }
 
 impl<T> Matrix<T>{
 
     /// Матрица [nrow] x [ncol], заполненная значениями по умолчанию (нулями)
     pub fn new(nrow: usize, ncol: usize) -> Matrix<T>
-    where T: Default + Copy + Clone{
+    where T: Default + Copy{
         Matrix {
             m: vec![T::default(); ncol*nrow],
             nrow,
             ncol,
-            const_mult: None,
         }
     }
 
@@ -30,15 +27,6 @@ impl<T> Matrix<T>{
         self.m[index]
     }
 
-    /// Возвращает значение в ячейке (row,col) без сомножителя
-    pub fn get_with_mult(&self, row:usize, col:usize) -> T
-    where T: Copy + Mul<Output=T>{
-        match self.const_mult{
-            None => self.get(row, col),
-            Some(x) => self.get(row, col) * x
-        }
-    }
-
     /// Устанавливает значение x в ячейку (row,col)
     pub fn set(&mut self, row:usize, col:usize, x: T) {
         let index = row * self.ncol + col;
@@ -47,7 +35,7 @@ impl<T> Matrix<T>{
 
     /// Вычитание
     pub fn sub(m1: &Matrix<T>, m2: &Matrix<T>) -> Matrix<T>
-    where T: Default + Copy + Clone + Sub<Output=T>{
+    where T: Default + Copy + Sub<Output=T>{
         assert_eq!(m1.nrow, m2.nrow);
         assert_eq!(m1.ncol, m2.ncol);
         let mut result = Matrix::new(m1.nrow, m2.ncol);
@@ -59,7 +47,7 @@ impl<T> Matrix<T>{
 
     /// Сложение
     pub fn add(m1: &Matrix<T>, m2: &Matrix<T>) -> Matrix<T>
-    where T: Default + Copy + Clone + Add<Output=T>{
+    where T: Default + Copy + Add<Output=T>{
         assert_eq!(m1.nrow, m2.nrow);
         assert_eq!(m1.ncol, m2.ncol);
         let mut result = Matrix::new(m1.nrow, m2.ncol);
@@ -71,9 +59,8 @@ impl<T> Matrix<T>{
 
     /// Возвращает транспонированную матрицу
     pub fn t(&self) -> Matrix<T>
-    where T: Default + Copy + Clone{
+    where T: Default + Copy{
         let mut result = Matrix::new(self.ncol, self.nrow);
-        result.const_mult = self.const_mult;
         for row in 0..self.nrow {
             for col in 0..self.ncol {
                 result.set(col, row, self.get(row,col));
@@ -84,19 +71,10 @@ impl<T> Matrix<T>{
 
     /// Умножение
     pub fn mul(m1: &Matrix<T>, m2: &Matrix<T>) -> Matrix<T>
-    where T: Add<Output=T> + Mul<Output=T> + Default + Copy + Clone{
+    where T: Add<Output=T> + Mul<Output=T> + Default + Copy{
 
         assert_eq!(m1.ncol, m2.nrow);
-
         let mut result = Matrix::new(m1.nrow, m2.ncol);
-        result.const_mult =
-            match (m1.const_mult, m2.const_mult) {
-                (None, None) => None,
-                (Some(x), None) => Some(x),
-                (None, Some(y)) => Some(y),
-                (Some(x), Some(y)) => Some(x*y)
-            };
-
         for i in 0..m1.nrow {
             for j in 0..m2.ncol {
                 let mut cij = T::default();
@@ -112,16 +90,9 @@ impl<T> Matrix<T>{
 
     /// Произведение Кронекера (тензорное умножение)
     pub fn kroneker_product(m1: &Matrix<T>, m2: &Matrix<T>) -> Matrix<T>
-    where T: Add<Output=T> + Mul<Output=T> + Default + Copy + Clone{
+    where T: Add<Output=T> + Mul<Output=T> + Default + Copy{
 
         let mut result = Matrix::new(m1.nrow*m2.nrow, m1.ncol*m2.ncol);
-        result.const_mult =
-            match (m1.const_mult, m2.const_mult) {
-                (None, None) => None,
-                (Some(x), None) => Some(x),
-                (None, Some(y)) => Some(y),
-                (Some(x), Some(y)) => Some(x*y)
-            };
 
         for i1 in 0..m1.nrow{
             for j1 in 0..m1.ncol{
@@ -145,7 +116,7 @@ impl<T> Matrix<T>{
 
     /// Преобразует вектор в матрицу [1] x [len]
     pub fn vec_to_matrix(vector: Vec<T>) -> Matrix<T>
-    where T: Default + Copy + Clone{
+    where T: Default + Copy{
         let mut result = Matrix::new(1, vector.len());
         for (i, value) in vector.iter().enumerate() {
             result.set(0, i, *value)
@@ -155,7 +126,7 @@ impl<T> Matrix<T>{
 
     /// копия матрицы
     pub fn copy(&self) -> Matrix<T>
-    where T: Copy + Clone{
+    where T: Copy{
         let mut m:Vec::<T> = Vec::with_capacity(self.nrow*self.ncol);
         for i in 0..self.nrow*self.ncol{
             m.push(self.m[i]);
@@ -164,7 +135,6 @@ impl<T> Matrix<T>{
             m: m,
             nrow: self.nrow,
             ncol: self.ncol,
-            const_mult: None,
         }
     }
 }
@@ -173,15 +143,6 @@ impl<T> fmt::Display for Matrix<T>
     where T: Display + Copy{
 
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-
-        let pred_str;
-        match self.const_mult{
-            Some(x) => {
-                write!(f, "{:5} * ", x)?;
-                pred_str = "        ".to_string();
-            },
-            _ => pred_str = "".to_string(),
-        }
 
         // для больших матриц вместо части строк и столбцов выводим "..."
         let skip_rows_after: usize = 14;
@@ -196,9 +157,6 @@ impl<T> fmt::Display for Matrix<T>
                 if row > skip_rows_after + 1 && row != self.nrow-1 {
                     continue;
                 }
-            }
-            if row>0{
-                write!(f, "{}", pred_str)?;
             }
 
             if self.nrow == 1{
@@ -239,13 +197,4 @@ impl<T> fmt::Display for Matrix<T>
         write!(f, "")
     }
 }
-
-
-//#[cfg(test)]
-//mod tests {
-//    #[test]
-//    fn it_works() {
-//        assert_eq!(2 + 2, 4);
-//    }
-//}
 

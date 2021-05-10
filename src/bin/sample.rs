@@ -13,23 +13,17 @@ fn test_print() {
 
     println!("{}", m1);
 
-    m1.const_mult = Some(1.234);
-
-    println!("{}", m1);
-
 }
 
 fn test_mul() {
 
-    println!("Пример: умножение с учетом сомножителя");
+    println!("Пример: умножение");
     let mut m1 = Matrix::new(2,2);
-    m1.const_mult = Some(2);
     m1.set(0,0,1);
     m1.set(0,1,2);
     m1.set(1,0,3);
     m1.set(1,1,4);
     let mut m2 = Matrix::new(2,2);
-    m2.const_mult = Some(3);
     m2.set(0,0,5);
     m2.set(0,1,6);
     m2.set(1,0,7);
