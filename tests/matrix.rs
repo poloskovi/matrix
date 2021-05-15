@@ -89,3 +89,27 @@ fn matrix_copy(){
     assert_eq!(m2.get(1,1), 4);
 }
 
+#[test]
+fn matrix_mul_threads(){
+    let mut m1 = Matrix::new(2,2);
+    m1.set(0,0,1);
+    m1.set(0,1,2);
+    m1.set(1,0,3);
+    m1.set(1,1,4);
+    let mut m2 = Matrix::new(2,2);
+    m2.set(0,0,5);
+    m2.set(0,1,6);
+    m2.set(1,0,7);
+    m2.set(1,1,8);
+    let n_threads = 2;
+    let m3 = Matrix::mul_threads(&m1,&m2,n_threads);
+    println!("{}", m1);
+    println!("X");
+    println!("{}", m2);
+    println!("=");
+    println!("{}", m3);
+    assert_eq!(m3.get(0,0),19);
+    assert_eq!(m3.get(0,1),22);
+    assert_eq!(m3.get(1,0),43);
+    assert_eq!(m3.get(1,1),50);
+}

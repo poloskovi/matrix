@@ -2,6 +2,8 @@ use std::ops::{Add, Mul, Sub};
 use std::fmt;
 use std::fmt::Display;
 
+extern crate crossbeam;
+
 pub struct Matrix<T>{
     pub m: Vec<T>,
     pub nrow: usize,
@@ -14,7 +16,7 @@ impl<T> Matrix<T>{
     pub fn new(nrow: usize, ncol: usize) -> Matrix<T>
     where T: Default + Copy{
         Matrix {
-            m: vec![T::default(); ncol*nrow],
+            m: vec![T::default(); nrow*ncol],
             nrow,
             ncol,
         }
@@ -71,9 +73,11 @@ impl<T> Matrix<T>{
 
     /// Умножение
     pub fn mul(m1: &Matrix<T>, m2: &Matrix<T>) -> Matrix<T>
-    where T: Add<Output=T> + Mul<Output=T> + Default + Copy{
+        where T: Add<Output=T> + Mul<Output=T> + Default + Copy
+    {
 
         assert_eq!(m1.ncol, m2.nrow);
+
         let mut result = Matrix::new(m1.nrow, m2.ncol);
         for i in 0..m1.nrow {
             for j in 0..m2.ncol {
@@ -81,9 +85,55 @@ impl<T> Matrix<T>{
                 for r in 0..m1.ncol {
                     cij = cij + (m1.get(i,r) * m2.get(r,j));
                 }
-                result.set(i,j,
-                    cij);
+                result.set(i, j, cij);
             }
+        }
+        result
+    }
+
+    /// Умножение в несколько потоков
+    pub fn mul_threads(m1: &Matrix<T>, m2: &Matrix<T>, threads: u8) -> Matrix<T>
+    where T: Add<Output=T> + Mul<Output=T> + Default + Copy + std::marker::Sync + std::marker::Send
+    {
+
+        assert_eq!(m1.ncol, m2.nrow);
+        assert!(threads>1);
+        assert!(threads as usize<=m1.nrow);
+
+        // матрица результата
+        let mut result = Matrix::new(m1.nrow, m2.ncol);
+
+        // количество строк в каждой части результата, вычислияемой в отдельном потоке
+        let rows_per_band = result.nrow / threads as usize;
+        let elements_in_row = result.ncol;
+        // в каждой части столько элементов
+        let index_per_band = rows_per_band * elements_in_row;
+        // результат разбиваем на threads частей по rows_per_band строк в каждой
+        let bands: Vec<&mut [T]>
+            = result.m.chunks_mut(index_per_band).collect();
+
+        {
+            crossbeam::scope(|spawner| {
+
+                for (i, band) in bands.into_iter().enumerate(){
+                    // эта часть начинается со строки low_row
+                    let low_row = rows_per_band * i;
+                    let up_row = low_row + band.len() / elements_in_row;
+
+                    spawner.spawn(move || {
+                        for i in low_row..up_row {
+                            for j in 0..m2.ncol {
+                                let mut cij = T::default();
+                                for r in 0..m1.ncol {
+                                    cij = cij + (m1.get(i,r) * m2.get(r,j));
+                                }
+                                let index = (i-low_row) * elements_in_row + j;
+                                band[index] = cij;
+                            }
+                        }
+                    });
+                }
+            });
         }
         result
     }
