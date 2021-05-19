@@ -72,8 +72,9 @@ impl<T> Matrix<T>{
     }
 
     /// Умножение
-    pub fn mul(m1: &Matrix<T>, m2: &Matrix<T>) -> Matrix<T>
-        where T: Add<Output=T> + Mul<Output=T> + Default + Copy
+    pub fn mul<L>(m1: &Matrix<L>, m2: &Matrix<T>) -> Matrix<T>
+        where T: Add<Output=T> + Default + Copy,
+        L: Mul<T, Output=T> + Copy
     {
 
         assert_eq!(m1.ncol, m2.nrow);
@@ -188,6 +189,47 @@ impl<T> Matrix<T>{
         }
     }
 }
+
+//pub trait MulMatrix<T,L=T>
+//{
+//    fn mul(m1: &Matrix<L>, m2: &Matrix<T>) -> Matrix<T>;
+//}
+
+//impl<T,L> MulMatrix<T,L> for Matrix<T,L>
+//    where T: Add<Output=T> + Mul<Output=T> + Default + Copy,
+//    L: Mul<Output=T> + Copy
+//{
+//    fn mul(m1: &Matrix<L>, m2: &Matrix<T>) -> Matrix<T>
+//    {
+
+//        assert_eq!(m1.ncol, m2.nrow);
+
+//        let mut result = Matrix::new(m1.nrow, m2.ncol);
+//        for i in 0..m1.nrow {
+//            for j in 0..m2.ncol {
+//                let mut cij = T::default();
+//                for r in 0..m1.ncol {
+//                    cij = cij + (m1.get(i,r) * m2.get(r,j));
+//                }
+//                result.set(i, j, cij);
+//            }
+//        }
+//        result
+//    }
+//}
+//pub trait MyMul<L,R>
+//{
+//    fn mul(left: L, right: R) -> R;
+//}
+
+//impl<L,R> MyMul<L,R> for R
+//    where L: Mul<R, Output=R>
+//{
+//    fn mul(left:L, right:R) -> R
+//    {
+//        left*right
+//    }
+//}
 
 impl<T> fmt::Display for Matrix<T>
     where T: Display + Copy{
